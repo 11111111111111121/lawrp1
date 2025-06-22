@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title id="siteTitle">Unknown Law Group</title>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #0a0a0a, #121212);
+      color: white;
+    }
+    header {
+      background: #181818;
+      padding: 1rem;
+      text-align: center;
+      font-size: 2rem;
+      color: #ef4444;
+      font-weight: bold;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+    nav {
+      background: #111111;
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .nav-left, .nav-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    nav button {
+      padding: 0.5rem 1rem;
+      background: #991b1b;
+      color: #fff;
+      border: 1px solid #dc2626;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+    nav button:hover {
+      background: #dc2626;
+      transform: scale(1.05);
+    }
+    .tab {
+      display: none;
+      padding: 2rem;
+      max-width: 900px;
+      margin: auto;
+      animation: fadein 0.3s ease-in;
+    }
+    .tab.active {
+      display: block;
+    }
+    .card {
+      background: #2d2b45;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 0.5rem;
+      border: 1px solid #991b1b;
+      box-shadow: 0 0 8px rgba(168, 85, 247, 0.3);
+    }
+    input, textarea, select {
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      background: #0f0f0f;
+      color: #fff;
+      border: 1px solid #991b1b;
+      border-radius: 0.375rem;
+    }
+    button.small {
+      font-size: 0.8rem;
+      padding: 0.25rem 0.75rem;
+      margin-top: 0.25rem;
+      border-radius: 0.375rem;
+      background: #dc2626;
+      border: none;
+    }
+    .lawyer-grid {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .lawyer-card {
+      background-color: #1a1a1a;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      width: 300px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+    }
+    .lawyer-card img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+    }
+    .lawyer-content {
+      padding: 1rem;
+    }
+    .lawyer-content h3 {
+      margin: 0;
+      color: #ef4444;
+    }
+    .lawyer-content p {
+      margin: 0.25rem 0;
+      color: #ddd;
+    }
+    .role-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      border-radius: 1rem;
+      background-color: #f43f5e;
+      color: white;
+      margin-top: 0.75rem;
+    }
+    footer {
+      background: #0f0f0f;
+      color: #fca5a5;
+      text-align: center;
+      padding: 2rem 1rem;
+      margin-top: 4rem;
+    }
+    footer p {
+      margin: 0.5rem 0;
+      font-size: 0.9rem;
+    }
+    @keyframes fadein {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+    
+  </style>
+
+
+</head>
+<body>
+  <header><span id="headerTitle">Unknown Law Group</span></header>
+  <nav>
+    <div class="nav-left">
+      <button onclick="showTab('home')">Home</button>
+
+      <button onclick="showTab('lawyers')">Lawyers</button>
+
+      <button onclick="showTab('contact')">Contact</button>
+      <button id="submissionsTab" style="display:none" onclick="showTab('submissions')">Submissions</button>
+      <button id="manageLawyersTab" style="display:none" onclick="showTab('manageLawyers')">Manage Lawyers</button>
+      <button id="editorTab" style="display:none" onclick="showTab('editor')">Site Editor</button><button id="calendarTab" style="display:none" onclick="showTab('calendar')">Court Calendar</button><button id="forumTab" style="display:none" onclick="showTab('forum')">Case Forum</button>
+      <button id="loginBtn" onclick="showTab('login')">Login</button>
+    </div>
+    <div class="nav-right" id="userNav" style="display:none;">
+      <span id="navUserName"></span>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+
+
+<div id="home" class="tab active">
+  <section style="text-align:center; padding: 3rem 1rem;">
+    <div style="max-width: 700px; margin: auto; display: flex; flex-direction: column; gap: 2.5rem;">
+      <div style="display:flex; justify-content:center; align-items:center; padding: 1rem;"><img id="mainLogo" src="logo.png" alt="Blackwater Law Logo" style="height:auto; max-height: 180px; max-width: 180px; object-fit: cover; border-radius: 12px; box-shadow: 0 0 12px rgba(255,0,0,0.2);" /></div>
+      <h1 style="color:#ef4444; font-size: 2.5rem; margin-top: 1rem;">BLACKWATER LAW</h1>
+      <p id="homeContent" style="color:#bbb; font-size: 1.2rem; margin-bottom: 1.5rem;"></p>
+
+      <h2 style="color:#ef4444; border-bottom: 1px solid #991b1b; padding-bottom: 0.25rem; margin-top: 2.5rem;">About Us</h2>
+      <p id="aboutContent" style="color:#ccc; font-size: 1rem; line-height: 1.6;">
+      </p>
+
+      <h2 style="color:#ef4444; border-bottom: 1px solid #991b1b; padding-bottom: 0.25rem; margin-top: 2.5rem;">Our Services</h2>
+      <p id="servicesContent" style="color:#ccc; font-size: 1rem; line-height: 1.6;">
+      </p>
+    </div>
+  </section>
+</div>
+
+<div id="lawyers" class="tab"><h2>Lawyers</h2><div id="lawyerList"></div></div>
+
+  <div id="contact" class="tab">
+    <h2>Contact</h2>
+    <form onsubmit="submitContact(event)">
+      <label for="contactType">Type of Help</label>
+      <select id="contactType" required>
+        <option value="">Select...</option>
+        <option value="Civil">Civil</option>
+        <option value="Criminal">Criminal</option>
+        <option value="Marriage/Divorce License">Marriage/Divorce License</option>
+        <option value="Other">Other</option>
+      </select>
+      <input id="contactName" placeholder="Name" required />
+      <input id="contactDiscord" placeholder="Phone Number" required />
+      <textarea id="contactMessage" placeholder="Message" required></textarea>
+      <button type="submit">Send</button>
+    </form>
+    <p id="contactSuccess"></p>
+  </div>
+  <div id="submissions" class="tab">
+    <h2>Submitted Contacts</h2>
+    <div id="contactList"></div>
+  </div>
+  <div id="manageLawyers" class="tab">
+    <h2>Manage Lawyers</h2>
+    <input id="lawyerEmail" type="email" placeholder="Email" />
+    <input id="lawyerPass" type="password" placeholder="Password" />
+    <input id="lawyerName" placeholder="Full Name" />
+    <input id="lawyerTitle" placeholder="Title" />
+    <input id="lawyerPhone" placeholder="Phone Number" />
+    <textarea id="lawyerBio" placeholder="Bio"></textarea>
+    <input id="lawyerImg" placeholder="Image URL" />
+    <label for="lawyerRole">Role</label>
+    <select id="lawyerRole">
+      <option>Managing Partner</option>
+      <option>Associate Attorney</option>
+      <option>Paralegal</option>
+      <option>Clerk</option>
+      <option>Case Manager</option>
+    </select>
+    <button onclick="addLawyer()">Add Lawyer</button>
+    <div id="editList"></div>
+  </div>
+  <div id="editor" class="tab">
+    <h2>Site Editor (Partner Only)</h2>
+    <label>Website Title</label>
+    <input id="editTitle" />
+
+    <label>Logo URL</label>
+    <input id="editLogo" placeholder="e.g. logo.png or external URL" />
+
+    <label>Home Page Text</label>
+    <textarea id="editHome"></textarea>
+    <label>About Page Text</label>
+    <textarea id="editAbout"></textarea>
+    <label>Services Page Text</label>
+    <textarea id="editServices"></textarea>
+    <button onclick="saveSiteContent()">Save Changes</button>
+  </div>
+
+<div id="calendar" class="tab">
+  <h2>Court Calendar</h2>
+  <form onsubmit="addEvent(event)">
+    <input id="eventTitle" placeholder="Event Title" required />
+    <input id="eventDate" type="date" required />
+    <textarea id="eventNotes" placeholder="Notes"></textarea>
+    <button type="submit">Add Event</button>
+  </form>
+  <div id="calendarList"></div>
+</div>
+
+
+<div id="forum" class="tab">
+  <h2>Case Forum</h2>
+  <div id="caseListView">
+    <form onsubmit="addCase(event)">
+      <input id="caseTitle" placeholder="Case Title" required />
+      <textarea id="caseNotes" placeholder="Initial Notes"></textarea>
+      <button type="submit">Create Case</button>
+    </form>
+    <div id="caseList" style="margin-top: 1.5rem;"></div>
+  </div>
+  <div id="caseDetailView" style="display:none; margin-top: 1.5rem;">
+    <button onclick="backToCaseList()">← Back to Case List</button>
+    <h3 id="caseDetailTitle" style="margin-top: 1rem;"></h3>
+    <div id="caseDiscussion" class="card" style="margin: 1rem 0;"></div>
+    <form onsubmit="addCaseComment(event)" enctype="multipart/form-data">
+      <textarea id="caseComment" placeholder="Add a comment..." required></textarea><br><input type="file" id="caseFile" accept="image/*,.pdf,.doc,.docx,.txt">
+      <button type="submit">Post Comment</button>
+    </form>
+  </div>
+</div>
+
+<div id="login" class="tab">
+    <h2>Login</h2>
+    <input id="loginEmail" type="email" placeholder="Email" />
+    <input id="loginPassword" type="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+  </div>
+
+<script>
+// Your Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBwZwK6YJjoZYO8vw5A_PVljr3L24zPYCQ",
+  authDomain: "lawrp-dda42.firebaseapp.com",
+  projectId: "lawrp-dda42",
+  storageBucket: "lawrp-dda42.firebasestorage.app",
+  messagingSenderId: "995633321167",
+  appId: "1:995633321167:web:4134a47d2175d1efdad3ba",
+  measurementId: "G-MBGGY5XTBP"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const database = firebase.database();
+const storage = firebase.storage();
+
+let currentUserEmail = ""; // Use email for display and consistency
+let currentUserRole = ""; // Variable to store the user's role
+
+
+
+function showTab(id) { // Fetch role when showing tabs
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if (id === "lawyers") { // Only load lawyers if a user is authenticated
+    loadLawyers();
+  }
+  if (id === "submissions") loadContacts();
+  if (id === "manageLawyers") loadLawyerEditor();
+  if (id === "editor") loadEditor();
+  if (id === "calendar") loadCalendar();
+  if (id === "forum") loadCases();
+}
+
+function login() {
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value.trim();
+
+  if (email === 'admin@example.com' && password === 'password123') {
+    alert('Login successful!');
+    currentUserEmail = 'admin@example.com';
+    currentUserRole = 'Managing Partner';
+    document.getElementById('navUserName').textContent = currentUserEmail;
+    loginBtn.style.display = "none";
+    submissionsTab.style.display = "inline-block";
+    manageLawyersTab.style.display = "inline-block";
+    editorTab.style.display = "inline-block";
+    calendarTab.style.display = "inline-block";
+    forumTab.style.display = "inline-block";
+    userNav.style.display = "flex";
+    applyContent();
+    showTab('home');
+    return;
+  }
+
+  if (!email || !password) {
+    alert("Please enter email and password.");
+    return;
+  }
+
+  database.ref('users').orderByChild('email').equalTo(email).once('value')
+    .then((snapshot) => {
+      const users = snapshot.val();
+      if (users) {
+        const userId = Object.keys(users)[0];
+        const userData = users[userId];
+        if (userData.password === password) {
+          currentUserEmail = userData.email;
+          currentUserRole = userData.role;
+          navUserName.textContent = currentUserEmail;
+          loginBtn.style.display = "none";
+
+          if (['Managing Partner', 'Developer'].includes(currentUserRole)) {
+            submissionsTab.style.display = "inline-block";
+            manageLawyersTab.style.display = "inline-block";
+            editorTab.style.display = "inline-block";
+            calendarTab.style.display = "inline-block";
+            forumTab.style.display = "inline-block";
+          } else if (currentUserRole === 'Associate Attorney') {
+            submissionsTab.style.display = "inline-block";
+            calendarTab.style.display = "inline-block";
+            forumTab.style.display = "inline-block";
+          }
+
+          userNav.style.display = "flex";
+          applyContent();
+          showTab('home');
+        } else {
+          alert("Invalid email or password.");
+        }
+      } else {
+        alert("No user found with that email.");
+      }
+    })
+    .catch((error) => {
+      console.error("Login error:", error);
+      alert("An error occurred during login.");
+    });
+}
+
+
+
+function logout() {
+  // Clear local user data
+  currentUserEmail = "";
+  currentUserRole = "";
+
+  // Update UI
+  document.getElementById('navUserName').textContent = "";
+  document.getElementById('loginBtn').style.display = "block";
+  document.getElementById('userNav').style.display = "none";
+
+  // Hide role-based tabs
+  document.getElementById('submissionsTab').style.display = "none";
+  document.getElementById('manageLawyersTab').style.display = "none";
+  document.getElementById('editorTab').style.display = "none";
+  document.getElementById('calendarTab').style.display = "none";
+  document.getElementById('forumTab').style.display = "none";
+ showTab('home'); // Go back to the home tab
+
+ auth.signOut().catch((error) => { // Still keep auth.signOut for Firebase Auth cleanup if used elsewhere
+    console.error("Logout error:", error);
+  });
+}
+
+function submitContact(e) {
+  e.preventDefault();
+  const contactsRef = database.ref('contacts');
+  const newContactRef = contactsRef.push();
+  newContactRef.set({
+    name: contactName.value,
+    discord: contactDiscord.value,
+    message: contactMessage.value,
+    type: contactType.value,
+    status: "Open",
+    claimedBy: ""
+  })
+  .then(() => {
+    contactSuccess.textContent = "Message submitted!";
+    e.target.reset();
+  })
+  .catch((error) => {
+    console.error("Error submitting contact:", error);
+    contactSuccess.textContent = "Error submitting message.";
+  });
+}
+
+function loadContacts() {
+  const contactListEl = document.getElementById("contactList");
+  const contactsRef = database.ref('contacts');
+  contactsRef.on('value', (snapshot) => {
+    const contacts = snapshot.val() || {};
+    contactListEl.innerHTML = Object.keys(contacts).map(key => {
+      const c = contacts[key];
+      let actions = "";
+
+      if ((currentUserRole === "Managing Partner" || currentUserRole === "Associate Attorney") && !c.claimedBy) {
+        actions += `<button class="small" onclick="claimContact('${key}')">Claim</button>`;
+      }
+      if (c.claimedBy === currentUserEmail && c.status !== "Done") {
+        actions += `<button class="small" onclick="markContactDone('${key}')">Done</button>`;
+      }
+      if (currentUserRole === "Managing Partner") {
+        actions += `<button class="small" onclick="deleteContact('${key}')">Delete</button>`;
+      }
+
+      return `<div class="card">
+        <strong>${c.name}</strong> (${c.discord})<br>
+        <em>Type: ${c.type || 'N/A'}</em><br>
+        ${c.message}<br>
+        Status: ${c.status}${c.claimedBy ? ' (By ' + c.claimedBy + ')' : ''}<br>
+        ${actions}
+      </div>`;
+    }).join("");
+  });
+}
+
+
+function claimContact(key) {
+  database.ref('contacts/' + key).update({
+ claimedBy: currentUserEmail // Use currentUserEmail here
+  })
+  .catch((error) => {
+    console.error("Error claiming contact:", error);
+  });
+}
+
+function claimContact(key) {
+  database.ref('contacts/' + key).update({
+    claimedBy: currentUserEmail
+  }) // Using currentUserEmail for consistency
+  .catch((error) => {
+    console.error("Error claiming contact:", error);
+  });
+}
+
+function markContactDone(key) {
+  database.ref('contacts/' + key).update({
+    status: "Done"
+  })
+  .catch((error) => {
+    console.error("Error marking contact done:", error);
+  });
+}
+
+function deleteContact(key) {
+   if (confirm("Are you sure you want to delete this contact submission?")) {
+      database.ref('contacts/' + key).remove()
+      .catch((error) => {
+         console.error("Error deleting contact:", error);
+      });
+   }
+}
+
+
+function loadLawyers() {
+  const lawyerListEl = document.getElementById("lawyerList");
+  const usersRef = database.ref('users');
+  lawyerListEl.innerHTML = ''; // Clear existing content
+
+  usersRef.once('value').then((snapshot) => {
+    const users = snapshot.val() || {};
+    lawyerListEl.innerHTML = '<div class="lawyer-grid">' + Object.keys(users).map(key => {
+      const user = users[key];
+      return `
+        <div class="lawyer-card">
+          ${user.img ? `<img src="${user.img}" alt="${user.name}">` : ""}
+          <div class="lawyer-content">
+            <h3>${user.name}</h3>
+            <p><strong>${user.title || ''}</strong></p>
+            <p>Phone: ${user.phone || '—'}</p>
+            <p>${user.bio || ''}</p>
+            <span class="role-badge">${user.role || '—'}</span>
+          </div>
+        </div>`;
+    }).join("") + '</div>';
+  }).catch((error) => {
+    console.error("Error loading lawyers:", error);
+    lawyerListEl.innerHTML = "<p>Unable to load lawyers at this time.</p>";
+  });
+}
+
+
+function addLawyer() {
+  const email = document.getElementById('lawyerEmail').value.trim(); // Using lawyerEmail input
+  const password = document.getElementById('lawyerPass').value.trim();
+  const name = document.getElementById('lawyerName').value.trim();
+  const title = lawyerTitle.value.trim();
+  const phone = document.getElementById('lawyerPhone').value.trim();
+  const bio = lawyerBio.value.trim();
+  const img = lawyerImg.value.trim();
+  const role = lawyerRole.value.trim();
+
+  if (!email || !password || !name || !role) {
+      alert("Email, password, name, and role are required.");
+      return;
+  }
+
+  // Save lawyer data to the 'users' node for login and roles
+  const newUserRef = database.ref('users').push();
+  newUserRef.set({
+    email: email,
+    password: password, // Insecure: Passwords should not be stored in plain text in the database
+    // For a production app, use Firebase Authentication or a secure backend
+    name: name,
+    title: title,
+    phone: phone,
+    bio: bio,
+    img: img,
+    role: role
+  })
+    .then(() => {
+      // Save lawyer profile data separately (if needed for public display without login)
+      // For this implementation, we'll use the same data structure under 'lawyers'
+      // to avoid redundancy.
+
+        alert("Lawyer added");
+        lawyerTitle.value = "";
+        lawyerPhone.value = "";
+        lawyerBio.value = "";
+        lawyerImg.value = "";
+        lawyerRole.value = "Associate Attorney";
+
+ loadLawyers(); loadLawyerEditor();
+    })
+    .catch((error) => {
+      alert("Error adding lawyer: " + error.message);
+    });
+}
+
+
+function loadLawyerEditor() {
+  const editListEl = document.getElementById("editList");
+  editListEl.innerHTML = "";
+  const usersRef = database.ref('users');
+
+  usersRef.once('value', snapshot => {
+    snapshot.forEach(childSnapshot => {
+      const key = childSnapshot.key;
+      const lawyer = childSnapshot.val();
+
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <h3 style="color:#ef4444;">Editing: ${lawyer.name || 'Unnamed Lawyer'}</h3>
+        <label>Name</label>
+        <input id="name-${key}" value="${lawyer.name || ''}">
+        <label>Title</label>
+        <input id="title-${key}" value="${lawyer.title || ''}">
+        <label>Phone</label>
+        <input id="phone-${key}" value="${lawyer.phone || ''}">
+        <label>Bio</label>
+        <textarea id="bio-${key}">${lawyer.bio || ''}</textarea>
+        <label>Image URL</label>
+        <input id="img-${key}" value="${lawyer.img || ''}">
+        <label>Role</label>
+        <select id="role-${key}">
+          <option${lawyer.role === 'Managing Partner' ? ' selected' : ''}>Managing Partner</option>
+          <option${lawyer.role === 'Associate Attorney' ? ' selected' : ''}>Associate Attorney</option>
+          <option${lawyer.role === 'Paralegal' ? ' selected' : ''}>Paralegal</option>
+          <option${lawyer.role === 'Clerk' ? ' selected' : ''}>Clerk</option>
+          <option${lawyer.role === 'Case Manager' ? ' selected' : ''}>Case Manager</option>
+        </select>
+        <div style="margin-top:0.75rem;">
+          <button class="small" onclick="saveLawyer('${key}')">💾 Save</button>
+          <button class="small" style="background:#991b1b;" onclick="removeLawyer('${key}')">🗑️ Delete</button>
+        </div>
+      `;
+      editListEl.appendChild(card);
+    });
+  });
+}
+
+function saveLawyer(key) {
+  const name = document.getElementById(`name-${key}`).value.trim();
+  const title = document.getElementById(`title-${key}`).value.trim();
+  const phone = document.getElementById(`phone-${key}`).value.trim();
+  const bio = document.getElementById(`bio-${key}`).value.trim();
+  const img = document.getElementById(`img-${key}`).value.trim();
+  const role = document.getElementById(`role-${key}`).value.trim();
+
+  database.ref('users/' + key).update({
+    name, title, phone, bio, img, role
+  }).then(() => {
+    alert("Lawyer updated.");
+    loadLawyerEditor(); // Refresh after save
+  }).catch((error) => {
+    console.error("Error saving lawyer:", error);
+    alert("Error updating lawyer.");
+  });
+}
+
+
+function removeLawyer(key) {
+  if (confirm("Are you sure you want to delete this lawyer?")) {
+    database.ref('users/' + key).remove()
+      .then(() => {
+        alert("Lawyer deleted.");
+        loadLawyers();       // Refresh the lawyer display
+        loadLawyerEditor();  // Refresh the manage panel too
+      })
+      .catch((error) => {
+        console.error("Error deleting lawyer:", error);
+        alert("Error deleting lawyer.");
+      });
+  }
+}
+
+// Site Content Editor
+function saveSiteContent() {
+  const siteContentRef = database.ref('siteContent');
+  siteContentRef.set({
+    siteLogo: editLogo.value,
+    siteTitle: editTitle.value,
+    homeContent: editHome.value,
+    aboutContent: editAbout.value,
+    servicesContent: editServices.value
+  })
+  .then(() => {
+    applyContent();
+    alert("Content saved.");
+  })
+  .catch((error) => {
+    console.error("Error saving site content:", error);
+    alert("Error saving content.");
+  });
+}
+
+
+function addEvent(e) {
+  e.preventDefault();
+  const eventsRef = database.ref('courtEvents');
+  const newEventRef = eventsRef.push();
+  newEventRef.set({
+    title: eventTitle.value,
+    date: eventDate.value,
+    notes: eventNotes.value
+  })
+  .then(() => {
+    loadCalendar();
+    e.target.reset();
+  })
+  .catch((error) => {
+    console.error("Error adding event:", error);
+  });
+}
+
+function loadCalendar() {
+  const calendarListEl = document.getElementById("calendarList");
+  const eventsRef = database.ref('courtEvents');
+  eventsRef.on('value', (snapshot) => {
+    const events = snapshot.val() || {};
+    calendarListEl.innerHTML = Object.keys(events).map(key => {
+      const e = events[key];
+      return `
+        <div class="card">
+          <strong>${e.title}</strong><br>${e.date}<br>${e.notes || ''}
+          <br><button class="small" onclick="deleteEvent('${key}')">Delete</button>
+        </div>`;
+    }).join("");
+  });
+}
+
+function deleteEvent(key) {
+  if (confirm("Are you sure you want to delete this event?")) {
+    database.ref('courtEvents/' + key).remove()
+      .catch((error) => {
+        console.error("Error deleting event:", error);
+        alert("Error deleting event.");
+      });
+  }
+}
+
+
+function addCase(e) {
+  e.preventDefault();
+  const casesRef = database.ref('caseForum');
+  const newCaseRef = casesRef.push();
+  newCaseRef.set({
+    title: caseTitle.value,
+    notes: caseNotes.value,
+    discussion: []
+  })
+  .then(() => {
+    loadCases();
+    e.target.reset();
+  })
+  .catch((error) => {
+    console.error("Error adding case:", error);
+  });
+}
+
+
+let currentCaseKey = null;
+
+function loadCases() {
+  const caseListEl = document.getElementById("caseList");
+  const casesRef = database.ref('caseForum');
+  casesRef.on('value', (snapshot) => {
+    const cases = snapshot.val() || {};
+    caseListEl.innerHTML = Object.keys(cases).map(key => {
+      const c = cases[key];
+      return `
+        <div class="card">
+          <strong>${c.title}</strong><br>${c.notes}
+          <div style="margin-top: 0.5rem;">
+            <button class="small" onclick="openCase('${key}')">Open</button>
+            <button class="small" style="background:#991b1b;" onclick="deleteCase('${key}')">Delete</button>
+          </div>
+        </div>`;
+    }).join("");
+  });
+}
+
+function deleteCase(key) {
+  if (confirm("Are you sure you want to delete this case?")) {
+    database.ref('caseForum/' + key).remove()
+      .catch((error) => {
+        console.error("Error deleting case:", error);
+        alert("Error deleting case.");
+      });
+  }
+}
+
+
+function openCase(key) {
+  const caseDetailTitleEl = document.getElementById("caseDetailTitle");
+  const caseDiscussionEl = document.getElementById("caseDiscussion");
+  const caseListViewEl = document.getElementById("caseListView");
+  const caseDetailViewEl = document.getElementById("caseDetailView");
+
+  currentCaseKey = key;
+
+  database.ref('caseForum/' + key).on('value', (snapshot) => {
+    const caseData = snapshot.val();
+    if (caseData) {
+      caseDetailTitleEl.textContent = caseData.title;
+
+      const discussion = caseData.discussion || {};
+      const comments = Object.values(discussion);
+      caseDiscussionEl.innerHTML = comments.map(msg => {
+        return `<div class="card"><strong>${msg.user}</strong><br>${msg.text || ''}</div>`;
+      }).join("");
+    }
+  });
+
+  caseListViewEl.style.display = "none";
+  caseDetailViewEl.style.display = "block";
+}
+
+
+function backToCaseList() {
+  // Detach listener when going back to list view
+  if (currentCaseKey) {
+     database.ref('caseForum/' + currentCaseKey).off();
+     currentCaseKey = null;
+  }
+  document.getElementById("caseListView").style.display = "block";
+  document.getElementById("caseDetailView").style.display = "none";
+}
+
+
+function addCaseComment(e) {
+  e.preventDefault();
+  const commentText = document.getElementById("caseComment").value.trim();
+  const fileInput = document.getElementById("caseFile");
+
+  if (!commentText || currentCaseKey === null) return;
+
+  const user = currentUserEmail || "Unknown";
+  const casesRef = database.ref('caseForum/' + currentCaseKey + '/discussion');
+
+  const uploadAndPost = (fileHTML = "") => {
+    const newComment = {
+      user,
+      text: commentText + fileHTML,
+      timestamp: new Date().toISOString()
+    };
+    casesRef.push(newComment)
+      .then(() => {
+        document.getElementById("caseComment").value = "";
+        document.getElementById("caseFile").value = "";
+      })
+      .catch((error) => {
+        console.error("Error adding case comment:", error);
+      });
+  };
+
+  if (fileInput.files.length > 0) {
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+      const dataUrl = evt.target.result;
+      let fileHTML = "";
+      if (file.type.startsWith("image/")) {
+        fileHTML = `<br><img src="${dataUrl}" style="max-width: 100%; margin-top: 0.5rem;" />`;
+      } else {
+        fileHTML = `<br><a href="${dataUrl}" download="${file.name}" style="color: #93c5fd;">${file.name}</a>`;
+      }
+      uploadAndPost(fileHTML);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    uploadAndPost();
+  }
+}
+
+
+
+function applyContent() {
+  const siteContentRef = database.ref('siteContent');
+  siteContentRef.once('value', (snapshot) => {
+    const content = snapshot.val() || {};
+    document.getElementById("mainLogo").src = content.siteLogo || "logo.png";
+    document.title = content.siteTitle || "Unknown Law Group";
+    headerTitle.textContent = document.title;
+    homeContent.textContent = content.homeContent || "Welcome to our RP law firm.";
+    aboutContent.textContent = content.aboutContent || "We serve all courts and clients with in-character legal representation.";
+    servicesContent.textContent = content.servicesContent || "Criminal defense, civil suits, legal advice, and more.";
+  });
+}
+
+function loadEditor() {
+  const siteContentRef = database.ref('siteContent');
+  siteContentRef.once('value', (snapshot) => {
+    const content = snapshot.val() || {};
+    editLogo.value = content.siteLogo || "logo.png";
+    editTitle.value = content.siteTitle || "Unknown Law Group";
+    editHome.value = content.homeContent || "Welcome to our RP law firm.";
+    editAbout.value = content.aboutContent || "We serve all courts and clients with in-character legal representation.";
+    editServices.value = content.servicesContent || "Criminal defense, civil suits, legal advice, and more.";
+  });
+}
+
+// Initial load of content
+applyContent();
+
+</script>
+
+  <footer style="background: #111; color: #888; text-align: center; padding: 2rem 1rem; margin-top: 4rem;">
+    <img src="logo.png" alt="Blackwater Law Logo" style="height: 80px; margin-bottom: 1rem;" />
+    <p style="margin: 0.5rem 0;">&copy; 2025 Blackwater Law. All rights reserved.</p>
+    <p style="margin: 0.5rem 0; font-size: 0.9rem;">Providing expert legal counsel with integrity and dedication in every case.</p>
+    <p style="margin: 0.5rem 0; font-size: 0.8rem;">Site by Blackwater Legal Group • Confidential & Professional</p>
+  </footer>
+
+
+<script>
+// These applyContent calls seem redundant after the main one in the script tag.
+// Leaving them here for now to match original structure but they can likely be removed.
+document.getElementById("homeContent").innerHTML = document.getElementById("homeContent").textContent;
+document.getElementById("aboutContent").innerHTML = document.getElementById("aboutContent").textContent;
+document.getElementById("servicesContent").innerHTML = document.getElementById("servicesContent").textContent;
+</script>
+</body>
+</html>
